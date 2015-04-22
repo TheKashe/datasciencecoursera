@@ -24,7 +24,8 @@ mergedLabels <- mergedLabels[order(rowNo)]
 mergedSets[,subject:=mergedSubjects$V1]
 mergedSets[,activity:=mergedLabels$V2]
 
-#4. Appropriately labels the data set with descriptive variable names. 
+#4. Appropriately labels the data set with descriptive variable names.
+library(stringr)
 names <- str_replace_all(names(mergedSets),"\\(\\)","")
 names <- str_replace_all(names,"-","")
 names <- str_replace(names,"^(t|f)","")
