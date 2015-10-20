@@ -1,0 +1,104 @@
+---
+title: "Dumbell lifts"
+author: "Jernej Kase"
+date: "10 Oct 2015"
+output: html_document
+---
+
+##Coursera practical machine learning project
+
+###Loading and preparing data
+
+First we download the files if they don't exist
+
+```{r}
+library(caret)
+library(randomForest)
+if(!file.exists("./data/pml-training.csv")){
+	download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",destfile = "./data/pml-training.csv", method = "curl")
+}
+if(!file.exists("./data/pml-testing.csv")){
+	download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",destfile = "./data/pml-testing.csv", method = "curl")
+}
+```
+
+We read the training set and slice it to training and testing in 60-40% ratio.
+
+```{r}
+set.seed(1234)
+data <- read.csv("./data//pml-training.csv")
+trainIndex <- createDataPartition(data$classe, p = .6,
+                                  list = FALSE,
+                                  times = 1)
+training <- data[trainIndex,]
+testing <- data[-trainIndex,]
+```
+
+Next we need to select the predictors. Whhat we do here is:
+1. remove sequence number (X) and name as they must not be used as predictors (we are interested in sensor data, not persons)
+2. The first 5 of the rest of the columns seems to be timestamps which again are irrelevant for our classification
+3. We remo columns with NA values
+4. We remove columns with low variability
+5. We remove highly correlated featrues (cufoff at cor=0.75)
+
+```{r}
+#X and name must not be used as predictors
+training <- training[,-(1:2)]
+#remove first 5 columns which seem to be some kind of timestamps
+training <- training[,-(1:5)]
+#random forest doesn't allow NA, so we remove columns which contain NA
+training <- training[, sapply(training, Negate(anyNA)), drop = FALSE]
+#remove near zero variance columns
+nsv <- nearZeroVar(training,saveMetrics=TRUE)
+training <- training[,!(nsv$nzv | nsv$zeroVar)]
+#remove highly corelated features
+featuresCor <- cor(training[,-(ncol(training))])
+highCor <- findCorrelation(featuresCor, cutoff = .75)
+training <- training[,-highCor]
+names <- colnames(training[,-(ncol(training))])
+print(names)
+```
+
+### Training the model
+
+We use the remaining colums as predictors and classe (last column) as result.
+Note: since caret is using very large forests by defaul, the processing is too slow for my PC.
+So indeed I use randomForest directly.
+
+```{r}
+if(!file.exists("./modFit.RData")){
+	modFit <- randomForest(training[,-(ncol(training))],training[,(ncol(training))],prox=TRUE)
+	save(modFit,file="./modFit.RData")
+} else {
+	load("./modFit.RData")
+}
+```
+
+###Testing the model
+
+We use the testing set from the split at the beginning to test against. And print a confusion matrix.
+
+```{r}
+predictions <- predict(modFit,newdata=testing[,names])
+confusionMatrix(predictions,testing$classe)
+```
+
+The model is 99% accurate on the test data, which is very good, hopefully not overfitted.
+
+###Prediction on test data set
+
+```{r}
+testdata <- read.csv("./data/pml-testing.csv")
+predictions <- predict(modFit,newdata=testdata[,names])
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(as.character(predictions))
+```
+
+For the record, the prediction was correct for all 20 cases!
