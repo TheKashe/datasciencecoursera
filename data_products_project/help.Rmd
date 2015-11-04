@@ -1,0 +1,66 @@
+---
+title: "Help for Stock Analyzer Application"
+output: html_document
+---
+
+### Introduction
+
+Stock analyzer is an application which enables users to analyze some preselected stock prices
+and company earnings
+
+### Using the application
+
+#### Filter panel (left)
+
+##### Select stock input list
+
+Here you select the company they are interested in. The demo version is limited to a few preselected companies.
+
+##### From
+
+Enter the date from which you are interested in stock price history.
+
+Notes:
+
+* Does not affect net income, only price history
+* September 30th 2015 by default
+* Please don't select a date too far in the past to conserve server resources
+
+##### To
+
+Enter the date to which you are interested in stock price history.
+
+Notes:
+
+* Does not affect net income, only price history
+* Current date by default
+
+##### Show
+
+Stock price history includes various daily data, and here you can select which you want to show on the chart.
+Multiple selections are permitted.
+
+Notes:
+
+* Does not affect net income, only price history
+
+#### Main panel
+
+##### Price history tab
+
+Will show price history data for selected company, date period and column to show.
+
+##### Net income
+
+Will show quarterly net income for selected company, based on data available from Quandl.
+
+Notes:
+
+* From, To and Show parameters are not used for this chart and are disabled when Net income tab is selected
+
+### Technical details
+
+The app is using quantmod to get stock price history from yahoo and Quandl for income data.
+Because no data is stored localy, there could be some delays before the chart is rendered, specially if large date window is selected.
+
+Sometimes quantmod doesn't work (probably due to some problems at yahoo server?). I can't control that, hope it works when you test it :-)
